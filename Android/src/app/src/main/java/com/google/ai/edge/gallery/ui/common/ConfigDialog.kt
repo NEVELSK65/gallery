@@ -203,6 +203,7 @@ fun LabelRow(config: LabelConfig, values: SnapshotStateMap<String, Any>) {
       try {
         values[config.key.label] as String
       } catch (e: Exception) {
+        Log.w(TAG, "Failed to read label config value for '${config.key.label}'", e)
         ""
       }
     Text(label, style = MaterialTheme.typography.bodyMedium)
@@ -225,6 +226,7 @@ fun getTextFieldDisplayValue(valueType: ValueType, value: Float): String {
       }
     }
   } catch (e: Exception) {
+    Log.w(TAG, "Failed to format display value for type $valueType", e)
     ""
   }
 }
@@ -260,6 +262,7 @@ fun NumberSliderRow(config: NumberSliderConfig, values: SnapshotStateMap<String,
         try {
           values[config.key.label] as Float
         } catch (e: Exception) {
+          Log.w(TAG, "Failed to read slider config value for '${config.key.label}'", e)
           0f
         }
 
@@ -331,6 +334,7 @@ fun BooleanSwitchRow(config: BooleanSwitchConfig, values: SnapshotStateMap<Strin
     try {
       values[config.key.label] as Boolean
     } catch (e: Exception) {
+      Log.w(TAG, "Failed to read switch config value for '${config.key.label}'", e)
       false
     }
   Column(modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {

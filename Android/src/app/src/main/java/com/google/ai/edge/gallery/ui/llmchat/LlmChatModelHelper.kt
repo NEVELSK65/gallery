@@ -172,7 +172,8 @@ object LlmChatModelHelper {
 
       Log.d(TAG, "Resetting done")
     } catch (e: Exception) {
-      Log.d(TAG, "Failed to reset conversation", e)
+      Log.e(TAG, "Failed to reset conversation", e)
+      throw e
     }
   }
 

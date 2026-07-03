@@ -64,11 +64,10 @@ inline fun <reified T> getJsonResponse(url: String): JsonObjAndTextContent<T>? {
       val jsonObj = gson.fromJson(response, T::class.java)
       return JsonObjAndTextContent(jsonObj = jsonObj, textContent = response)
     } else {
-      Log.e("AGUtils", "HTTP error: $responseCode")
+      Log.e(TAG, "HTTP error $responseCode when fetching '$url'")
     }
   } catch (e: Exception) {
-    Log.e("AGUtils", "Error when getting json response: ${e.message}")
-    e.printStackTrace()
+    Log.e(TAG, "Error when getting json response from '$url'", e)
   }
 
   return null

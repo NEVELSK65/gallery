@@ -427,7 +427,7 @@ private fun importModel(
         }
       }
     } catch (e: Exception) {
-      e.printStackTrace()
+      Log.e(TAG, "Failed to import model from URI", e)
       onError(e.message ?: "Failed to import")
       return@launch
     } finally {
@@ -458,7 +458,7 @@ private fun getFileSizeAndDisplayNameFromUri(context: Context, uri: Uri): Pair<L
         }
       }
   } catch (e: Exception) {
-    e.printStackTrace()
+    Log.e(TAG, "Failed to read file metadata from URI", e)
     return Pair(0L, "")
   }
 

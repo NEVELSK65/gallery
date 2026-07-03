@@ -281,7 +281,7 @@ private suspend fun playAudio(
       }
     }
   } catch (e: Exception) {
-    // Ignore
+    Log.e(TAG, "Audio playback failed", e)
   } finally {
     onProgress(1f)
     onCompletion()

@@ -460,7 +460,7 @@ constructor(
       // Report the result.
       return connection.responseCode
     } catch (e: Exception) {
-      Log.e(TAG, "$e")
+      Log.e(TAG, "Failed to get model URL response for '${model.url}'", e)
       return -1
     }
   }
@@ -799,7 +799,13 @@ constructor(
         // Process pending downloads.
         processPendingDownloads()
       } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(TAG, "Failed to load model allowlist", e)
+        _uiState.update {
+          uiState.value.copy(
+            loadingModelAllowlist = false,
+            loadingModelAllowlistError = e.message ?: "Failed to load model list",
+          )
+        }
       }
     }
   }
