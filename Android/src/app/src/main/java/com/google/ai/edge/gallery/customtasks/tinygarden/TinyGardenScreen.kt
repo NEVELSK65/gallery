@@ -15,10 +15,8 @@
  */
 package com.google.ai.edge.gallery.customtasks.tinygarden
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
@@ -28,8 +26,6 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -54,9 +50,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -65,7 +58,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,7 +70,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
@@ -86,7 +77,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.webkit.WebViewAssetLoader
@@ -96,15 +86,17 @@ import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.data.ValueType
 import com.google.ai.edge.gallery.data.convertValueToTargetType
+import com.google.ai.edge.gallery.ui.common.ModelNotInitializedIndicator
+import com.google.ai.edge.gallery.ui.common.ResetEngineErrorDialog
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageText
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageWarning
 import com.google.ai.edge.gallery.ui.common.chat.ChatSide
 import com.google.ai.edge.gallery.ui.common.getTaskBgGradientColors
+import com.google.ai.edge.gallery.ui.common.rememberAudioRecordingPermission
 import com.google.ai.edge.gallery.ui.common.textandvoiceinput.HoldToDictateViewModel
 import com.google.ai.edge.gallery.ui.common.textandvoiceinput.TextAndVoiceInput
 import com.google.ai.edge.gallery.ui.common.textandvoiceinput.VoiceRecognizerOverlay
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
-import com.google.ai.edge.gallery.ui.theme.customColors
 import com.google.common.io.BaseEncoding
 import java.security.MessageDigest
 import kotlinx.coroutines.delay
@@ -127,32 +119,7 @@ fun TinyGardenScreen(
   viewModel: TinyGardenViewModel = hiltViewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
-  var recordAudioPermissionGranted by remember { mutableStateOf(false) }
-  val context = LocalContext.current
-
-  // Permission request when recording audio clips.
-  val recordAudioClipsPermissionLauncher =
-    rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-      permissionGranted ->
-      if (permissionGranted) {
-        recordAudioPermissionGranted = true
-      }
-    }
-
-  LaunchedEffect(Unit) {
-    // Check permission
-    when (PackageManager.PERMISSION_GRANTED) {
-      // Already got permission. Call the lambda.
-      ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) -> {
-        recordAudioPermissionGranted = true
-      }
-
-      // Otherwise, ask for permission
-      else -> {
-        recordAudioClipsPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-      }
-    }
-  }
+  val recordAudioPermissionGranted = rememberAudioRecordingPermission()
 
   if (recordAudioPermissionGranted) {
     Column(
@@ -450,17 +417,7 @@ fun MainUi(
 
   // Show a loading indicator before the model is initialized.
   if (!modelManagerUiState.isModelInitialized(model = model)) {
-    Row(
-      modifier = Modifier.fillMaxSize(),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.Center,
-    ) {
-      CircularProgressIndicator(
-        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        strokeWidth = 3.dp,
-        modifier = Modifier.size(24.dp),
-      )
-    }
+    ModelNotInitializedIndicator()
   }
   // Main UI.
   else {
@@ -662,52 +619,27 @@ fun MainUi(
   }
 
   if (showErrorDialog) {
-    AlertDialog(
-      title = { Text(stringResource(R.string.error)) },
-      text = {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          Text(errorDialogContent, style = MaterialTheme.typography.bodyMedium)
-          Text(
-            stringResource(R.string.reset_note),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.customColors.warningTextColor,
-          )
-        }
-      },
-      onDismissRequest = {
+    ResetEngineErrorDialog(
+      errorContent = errorDialogContent,
+      confirmButtonColor = taskColor,
+      showResetNote = true,
+      onDismiss = {
         showErrorDialog = false
         errorDialogContent = ""
       },
-      dismissButton = {
-        TextButton(
-          onClick = {
-            showErrorDialog = false
-            errorDialogContent = ""
-          }
-        ) {
-          Text(stringResource(R.string.cancel))
-        }
-      },
-      confirmButton = {
-        Button(
-          onClick = {
-            showErrorDialog = false
-            errorDialogContent = ""
+      onReset = {
+        showErrorDialog = false
+        errorDialogContent = ""
 
-            viewModel.resetEngine(
-              context = context,
-              model = model,
-              tools = tools,
-              onError = {
-                errorDialogContent = it
-                showErrorDialog = true
-              },
-            )
+        viewModel.resetEngine(
+          context = context,
+          model = model,
+          tools = tools,
+          onError = {
+            errorDialogContent = it
+            showErrorDialog = true
           },
-          colors = ButtonDefaults.buttonColors(containerColor = taskColor),
-        ) {
-          Text(stringResource(R.string.reset), color = Color.White)
-        }
+        )
       },
     )
   }

@@ -15,12 +15,8 @@
  */
 package com.google.ai.edge.gallery.customtasks.mobileactions
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -62,10 +58,6 @@ import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.rounded.Functions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -77,7 +69,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -110,17 +101,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.google.ai.edge.gallery.R
 import com.google.ai.edge.gallery.data.ModelDownloadStatusType
 import com.google.ai.edge.gallery.data.Task
 import com.google.ai.edge.gallery.ui.common.MarkdownText
+import com.google.ai.edge.gallery.ui.common.ModelNotInitializedIndicator
+import com.google.ai.edge.gallery.ui.common.ResetEngineErrorDialog
 import com.google.ai.edge.gallery.ui.common.chat.ChatMessageWarning
 import com.google.ai.edge.gallery.ui.common.chat.MessageBodyLoading
 import com.google.ai.edge.gallery.ui.common.chat.MessageBodyWarning
 import com.google.ai.edge.gallery.ui.common.getTaskBgGradientColors
 import com.google.ai.edge.gallery.ui.common.getTaskIconColor
+import com.google.ai.edge.gallery.ui.common.rememberAudioRecordingPermission
 import com.google.ai.edge.gallery.ui.common.textandvoiceinput.HoldToDictateViewModel
 import com.google.ai.edge.gallery.ui.common.textandvoiceinput.TextAndVoiceInput
 import com.google.ai.edge.gallery.ui.common.textandvoiceinput.VoiceRecognizerOverlay
@@ -226,33 +219,7 @@ fun MobileActionsScreen(
   tools: List<MobileActionsTools>,
   onProcessingStarted: () -> Unit,
 ) {
-  var recordAudioPermissionGranted by remember { mutableStateOf(false) }
-  val context = LocalContext.current
-
-  // Permission request when recording audio clips.
-  val recordAudioClipsPermissionLauncher =
-    rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-      permissionGranted ->
-      if (permissionGranted) {
-        recordAudioPermissionGranted = true
-      }
-    }
-
-  // Ask for audio recording permission.
-  LaunchedEffect(Unit) {
-    // Check permission.
-    when (PackageManager.PERMISSION_GRANTED) {
-      // Already got permission. Call the lambda.
-      ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) -> {
-        recordAudioPermissionGranted = true
-      }
-
-      // Otherwise, ask for permission
-      else -> {
-        recordAudioClipsPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-      }
-    }
-  }
+  val recordAudioPermissionGranted = rememberAudioRecordingPermission()
 
   if (recordAudioPermissionGranted) {
     Column(
@@ -325,17 +292,7 @@ fun MainUi(
 
   // Show a loading indicator before the model is initialized.
   if (!modelManagerUiState.isModelInitialized(model = model)) {
-    Row(
-      modifier = Modifier.fillMaxSize(),
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.Center,
-    ) {
-      CircularProgressIndicator(
-        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        strokeWidth = 3.dp,
-        modifier = Modifier.size(24.dp),
-      )
-    }
+    ModelNotInitializedIndicator()
   }
   // Main UI.
   else {
@@ -686,44 +643,27 @@ fun MainUi(
   }
 
   if (showErrorDialog) {
-    AlertDialog(
-      title = { Text(stringResource(R.string.error)) },
-      text = { Text(errorDialogContent, style = MaterialTheme.typography.bodyMedium) },
-      onDismissRequest = {
+    ResetEngineErrorDialog(
+      errorContent = errorDialogContent,
+      confirmButtonColor = taskColor,
+      onDismiss = {
         showErrorDialog = false
         errorDialogContent = ""
       },
-      dismissButton = {
-        TextButton(
-          onClick = {
-            showErrorDialog = false
-            errorDialogContent = ""
-          }
-        ) {
-          Text(stringResource(R.string.cancel))
-        }
-      },
-      confirmButton = {
-        Button(
-          onClick = {
-            showErrorDialog = false
-            errorDialogContent = ""
+      onReset = {
+        showErrorDialog = false
+        errorDialogContent = ""
 
-            viewModel.resetEngine(
-              context = context,
-              model = model,
-              tools = tools,
-              modelManagerViewModel = modelManagerViewModel,
-              onError = {
-                errorDialogContent = it
-                showErrorDialog = true
-              },
-            )
+        viewModel.resetEngine(
+          context = context,
+          model = model,
+          tools = tools,
+          modelManagerViewModel = modelManagerViewModel,
+          onError = {
+            errorDialogContent = it
+            showErrorDialog = true
           },
-          colors = ButtonDefaults.buttonColors(containerColor = taskColor),
-        ) {
-          Text(stringResource(R.string.reset), color = Color.White)
-        }
+        )
       },
     )
   }
