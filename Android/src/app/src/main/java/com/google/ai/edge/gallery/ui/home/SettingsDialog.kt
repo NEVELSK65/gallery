@@ -199,7 +199,7 @@ fun SettingsDialog(
             val curHfToken = hfToken
             if (curHfToken != null && curHfToken.accessToken.isNotEmpty()) {
               Text(
-                curHfToken.accessToken.substring(0, min(16, curHfToken.accessToken.length)) + "...",
+                curHfToken.accessToken.substring(0, min(4, curHfToken.accessToken.length)) + "****",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
