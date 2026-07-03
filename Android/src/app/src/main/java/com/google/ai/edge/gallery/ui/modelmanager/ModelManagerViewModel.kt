@@ -164,6 +164,7 @@ constructor(
 
   val authService = AuthorizationService(context)
   var curAccessToken: String = ""
+    private set
 
   override fun onCleared() {
     super.onCleared()
@@ -554,7 +555,7 @@ constructor(
 
       // Check expiration (with 5-minute buffer).
       val curTs = System.currentTimeMillis()
-      val expirationTs = tokenData.expiresAtMs - 5 * 60
+      val expirationTs = tokenData.expiresAtMs - 5 * 60 * 1000
       Log.d(
         TAG,
         "Checking whether token has expired or not. Current ts: $curTs, expires at: $expirationTs",

@@ -132,7 +132,7 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
 
             val connection = url.openConnection() as HttpURLConnection
             if (accessToken != null) {
-              Log.d(TAG, "Using access token: ${accessToken.subSequence(0, 10)}...")
+              Log.d(TAG, "Using access token for authenticated download.")
               connection.setRequestProperty("Authorization", "Bearer $accessToken")
             }
 
@@ -278,7 +278,11 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
               var zipEntry: ZipEntry? = zipIn.nextEntry
 
               while (zipEntry != null) {
-                val filePath = destDir.absolutePath + File.separator + zipEntry.name
+                val entryFile = File(destDir, zipEntry.name).canonicalFile
+                if (!entryFile.path.startsWith(destDir.canonicalPath + File.separator)) {
+                  throw IOException("Zip entry is outside of the target dir: ${zipEntry.name}")
+                }
+                val filePath = entryFile.path
 
                 // Extract files.
                 if (!zipEntry.isDirectory) {
