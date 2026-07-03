@@ -200,7 +200,9 @@ open class LlmChatViewModelBase() : ChatViewModel() {
       clearAllMessages(model = model)
       stopResponse(model = model)
 
-      while (true) {
+      val maxRetries = 3
+      var lastException: Exception? = null
+      for (attempt in 1..maxRetries) {
         try {
           val supportImage =
             model.llmSupportImage &&
@@ -213,11 +215,16 @@ open class LlmChatViewModelBase() : ChatViewModel() {
             supportImage = supportImage,
             supportAudio = supportAudio,
           )
+          lastException = null
           break
         } catch (e: Exception) {
-          Log.d(TAG, "Failed to reset session. Trying again")
+          lastException = e
+          Log.w(TAG, "Failed to reset session (attempt $attempt/$maxRetries)", e)
         }
         delay(200)
+      }
+      if (lastException != null) {
+        Log.e(TAG, "Failed to reset session after $maxRetries attempts", lastException)
       }
       setIsResettingSession(false)
     }

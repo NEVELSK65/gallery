@@ -721,7 +721,7 @@ private fun String.sha256(): String {
     val digest = sha256.digest(inputBytes)
     BaseEncoding.base64().encode(digest)
   } catch (e: Exception) {
-    e.printStackTrace()
+    Log.e(TAG, "Failed to compute SHA-256 hash", e)
     ""
   }
 }

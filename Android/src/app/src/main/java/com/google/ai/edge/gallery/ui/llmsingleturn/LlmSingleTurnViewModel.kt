@@ -168,6 +168,7 @@ class LlmSingleTurnViewModel @Inject constructor() : ViewModel() {
           setInProgress(false)
         },
         onError = { message ->
+          Log.e(TAG, "Error during single-turn inference: $message")
           setPreparing(false)
           setInProgress(false)
         },

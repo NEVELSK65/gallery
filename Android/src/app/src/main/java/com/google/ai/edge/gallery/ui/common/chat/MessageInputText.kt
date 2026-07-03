@@ -886,7 +886,7 @@ private fun handleImagesSelected(
           null
         }
       } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(TAG, "Failed to process selected image", e)
         null
       }
     if (bitmap != null) {
@@ -951,7 +951,7 @@ private fun checkFrontCamera(context: Context, callback: (Boolean) -> Unit) {
         val hasFront = cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)
         callback(hasFront)
       } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(TAG, "Failed to check front camera availability", e)
         callback(false)
       }
     },
